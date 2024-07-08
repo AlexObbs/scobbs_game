@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCOBBS WORD GAME</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(5, 60px);
+            grid-gap: 5px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tile {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #ccc;
+            text-align: center;
+            font-size: 30px;
+            line-height: 60px;
+            background-color: white;
+        }
+
+        .correct {
+            background-color: green;
+            color: white;
+        }
+
+        .present {
+            background-color: yellow;
+            color: white;
+        }
+
+        .absent {
+            background-color: grey;
+            color: white;
+        }
+
+        #instructions {
+            max-width: 300px;
+            text-align: left;
+            background-color: #fff;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 650px) {
+            #container {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+
+            #game-board {
+                grid-template-columns: repeat(5, 30px);
+                grid-gap: 4px;
+            }
+
+            .tile {
+                width: 30px;
+                height: 30px;
+                font-size: 20px;
+                line-height: 30px;
+            }
+
+            #instructions {
+                max-width: 100%;
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="game-board"></div>
+        <!-- <div id="keyboard"></div> -->
+
+        <div id="instructions">
+            <h2 style="text-align: center;">How to Play</h2>
+            <p>1. The Computer randomly picks a five-letter word country name (for example: Spain, China, India...)</p>
+            <p>2. Guess the word by typing your guesses using your keyboard and press ENTER.</p>
+            <p>3. After each guess, the color of the tiles will change to show how close your guess was to the word:</p>
+            <ul>
+                <li><strong style="color: green;">Green</strong> - Correct letter in the correct position.</li>
+                <li><strong style="color: yellow;">Yellow</strong> - Correct letter in the wrong position.</li>
+                <li><strong style="color: gray;">Gray</strong> - Incorrect letter.</li>
+            </ul>
+            <p>4. The game ends when you've made 6 incorrect guesses or found all the letters in the correct order.
+                Refresh the site to play again</p>
+            <p style="text-align: right;">By Alex</p>
+        </div>
+    </div>
+
+    <script>
+        const localWords = ["CHILE", "EGYPT", "GHANA", "INDIA", "ITALY", "JAPAN", "KENYA", "NEPAL", "QATAR", "SPAIN", 'CHINA', 'SUDAN', 'SAMOA', 'YEMEN', 'GABON', 'GHANA']; // Local 5-letter country names
+        let currentWord = localWords[Math.floor(Math.random() * localWords.length)];
+        let attempts = 6;
+        let guessedWords = [];
+        let currentGuess = [];
+
+        function createBoard() {
+            const board = document.getElementById('game-board');
+            for (let i = 0; i < attempts * 5; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                board.appendChild(tile);
+            }
+        }
+
+        function handleKeyPress(key) {
+            if (guessedWords.length >= attempts) return;
+
+            const activeTiles = Array.from(document.querySelectorAll('.tile')).slice(guessedWords.length * 5, guessedWords.length * 5 + 5);
+            if (currentGuess.length < 5) {
+                currentGuess.push(key);
+                activeTiles[currentGuess.length - 1].innerText = key;
+            }
+        }
+
+        function handleBackspace() {
+            if (currentGuess.length > 0) {
+                const activeTiles = Array.from(document.querySelectorAll('.tile')).slice(guessedWords.length * 5, guessedWords.length * 5 + 5);
+                currentGuess.pop();
+                activeTiles[currentGuess.length].innerText = '';
+            }
+        }
+
+        function handleSubmitGuess() {
+            if (currentGuess.length < 5) return;
+
+            const guessedWord = currentGuess.join('');
+            guessedWords.push(guessedWord);
+            const activeTiles = Array.from(document.querySelectorAll('.tile')).slice((guessedWords.length - 1) * 5, guessedWords.length * 5);
+            checkWord(guessedWord, activeTiles);
+            currentGuess = [];
+
+            if (guessedWord === currentWord) {
+                alert('Congrats! 🎊 You guessed the word!');
+            } else if (guessedWords.length === attempts) {
+                alert('Game over! The word was ' + currentWord);
+            }
+        }
+
+        function checkWord(guessedWord, tiles) {
+            const result = [];
+            for (let i = 0; i < guessedWord.length; i++) {
+                if (guessedWord[i] === currentWord[i]) {
+                    result.push('correct');
+                } else if (currentWord.includes(guessedWord[i])) {
+                    result.push('present');
+                } else {
+                    result.push('absent');
+                }
+            }
+            tiles.forEach((tile, index) => {
+                tile.classList.add(result[index]);
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                handleSubmitGuess();
+            } else if (event.key === 'Backspace') {
+                handleBackspace();
+            } else if (/^[a-zA-Z]$/.test(event.key)) {
+                handleKeyPress(event.key.toUpperCase());
+            }
+        });
+
+        createBoard();
+    </script>
+</body>
+
+</html>
